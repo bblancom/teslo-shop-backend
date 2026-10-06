@@ -5,6 +5,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { validate as isUUID } from 'uuid';
 
 @Injectable()
 export class ProductsService {
@@ -14,7 +15,7 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>
-  ){}
+  ) { }
 
   async create(createProductDto: CreateProductDto) {
 
@@ -31,7 +32,7 @@ export class ProductsService {
 
   }
 
-  async findAll( paginationDto: PaginationDto ) {
+  async findAll(paginationDto: PaginationDto) {
     const { limit = 10, offset = 0 } = paginationDto;
 
     return this.productRepository.find({
@@ -40,10 +41,22 @@ export class ProductsService {
     });
   }
 
-  async findOne(id: string) {
-    const product = await this.productRepository.findOneBy({ id });
+  async findOne(term: string) {
+    let product: Product | null;
 
-    if(!product) throw new NotFoundException(`Product with id ${id} not found`);
+    if (isUUID(term)) {
+      product = await this.productRepository.findOneBy({ id: term });
+    } else {
+      const queryBuilder = this.productRepository.createQueryBuilder();
+
+      product = await queryBuilder
+        .where(`UPPER(title) =: title or slug =:slug`, {
+          title: term.toUpperCase(),
+          slug: term.toLowerCase()
+        }).getOne();
+    }
+
+    if (!product) throw new NotFoundException(`Product with id ${term} not found`);
 
     return product;
   }
@@ -55,18 +68,18 @@ export class ProductsService {
   async remove(id: string) {
     const product = await this.findOne(id);
 
-    if(!product) throw new NotFoundException(`Product with id ${id} not found`);
+    if (!product) throw new NotFoundException(`Product with id ${id} not found`);
 
     await this.productRepository.remove(product);
   }
 
-  private handleDbExceptions (error: any) {
+  private handleDbExceptions(error: any) {
 
-      if(error.code === '23505'){
-        throw new BadRequestException(error.detail);
-      }
+    if (error.code === '23505') {
+      throw new BadRequestException(error.detail);
+    }
 
-      this.logger.error(error);
-      throw new InternalServerErrorException('Unexpected error, check server logs');
+    this.logger.error(error);
+    throw new InternalServerErrorException('Unexpected error, check server logs');
   }
 }
