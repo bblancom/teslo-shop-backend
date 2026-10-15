@@ -9,7 +9,10 @@
 2. Execute the command
 ``` yarn install ```
 
-3. Clone the file ```.env.template``` and rename it to ```.env````
+3. Clone the file 
+```.env.template``` 
+and rename it to 
+```.env```
 
 4. Change environment variables
 
@@ -18,6 +21,14 @@
 docker-compose up -d
 ```
 
-6. Start development mode
+6. Execute SEED
+```
+localhost:3000/api/seed
+```
 
-```yarn start:dev```
+7. Start development mode
+
+```
+yarn start:dev
+```
+
