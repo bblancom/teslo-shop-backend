@@ -6,13 +6,16 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
 import { LoginUserDto, CreateUserDto } from './dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
 
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService
   ) { }
 
   async create(createUserDto: CreateUserDto) {
@@ -29,7 +32,10 @@ export class AuthService {
 
       const { password: _password, ...userWithoutPassword } = user;
 
-      return userWithoutPassword;
+      return {
+        ...userWithoutPassword,
+        // token: this.getJwtToken({ id: user.id })
+      };
 
     } catch (error) {
       this.handleDBErrors(error);
@@ -38,16 +44,25 @@ export class AuthService {
 
   async login(loginUserDto: LoginUserDto) {
     const { email, password } = loginUserDto;
-    const user = await this.userRepository.findOne({ 
+    const user = await this.userRepository.findOne({
       where: { email },
       select: { email: true, password: true }
     });
 
-    if(!user) throw new UnauthorizedException('Credentials are not valid (email)');
+    if (!user) throw new UnauthorizedException('Credentials are not valid (email)');
 
-    if(!bcrypt.compareSync(password, user.password)) throw new UnauthorizedException('Credentials are not valid (password)');
+    if (!bcrypt.compareSync(password, user.password)) throw new UnauthorizedException('Credentials are not valid (password)');
 
-    return user;
+    return {
+      ...user,
+      token: this.getJwtToken({ email: user.email })
+    };
+  }
+
+  private getJwtToken(payload: JwtPayload) {
+    const token = this.jwtService.sign(payload);
+
+    return token;
   }
 
   private handleDBErrors(error: any): never {
