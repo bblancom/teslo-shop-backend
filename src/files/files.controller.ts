@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { diskStorage } from 'multer';
 import { FilesService } from './files.service';
@@ -18,6 +18,8 @@ export class FilesController {
   ) {}
 
   @Get('product/:imageName')
+  @ApiResponse({ status: 200, description: 'Product image served successfully' })
+  @ApiResponse({ status: 404, description: 'Image not found' })
   findProductImage(
     @Res() res: Response,
     @Param('imageName') imageName: string
@@ -38,6 +40,8 @@ export class FilesController {
       filename: fileNamer
     })
   }))
+  @ApiResponse({ status: 201, description: 'Product image uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid image file' })
   uploadProductImage(@UploadedFile() file: Express.Multer.File) {
 
     if(!file){
