@@ -5,6 +5,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from './decorators/get-user.decorator';
 import { User } from './entities/user.entity';
 import { RawHeaders } from './decorators/raw-headers.decorator';
+import { Auth } from './decorators';
 
 @Controller('auth')
 export class AuthController {
@@ -18,6 +19,14 @@ export class AuthController {
   @Post('login')
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.login(loginUserDto);
+  }
+
+  @Get('check-status')
+  @Auth()
+  checkAuthStatus(
+    @GetUser() user: User
+  ){
+    return this.authService.checkAuthStatus(user);
   }
 
   @Get('private')

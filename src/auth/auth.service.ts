@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
 
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -53,6 +54,13 @@ export class AuthService {
 
     if (!bcrypt.compareSync(password, user.password)) throw new UnauthorizedException('Credentials are not valid (password)');
 
+    return {
+      ...user,
+      token: this.getJwtToken({ id: user.id })
+    };
+  }
+
+  checkAuthStatus(user: User) {
     return {
       ...user,
       token: this.getJwtToken({ id: user.id })
